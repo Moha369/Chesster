@@ -238,7 +238,7 @@ function replyMisunderstood(bot, message, command, syntax){
 function replyMisunderstoodAvailability(bot, message){
     replyMisunderstood(bot, message, 
         "availability", 
-        "[player <player> is] {available,unavailable} during round <round-number> in <league>");
+        "[player <player> is] {available,unavailable} for round <round-number> in <league>");
 }
 
 /* alternate assignment */
@@ -491,39 +491,78 @@ function prepareRatingMessage(_player, rating){
 function prepareCommandsMessage(){
     return "I will respond to the following commands when they are spoken to " + 
 									  users.getIdString("chesster") + ": \n```" +
+	"" +
+	"------" +
+	"-help-" +
+	"------" +
+	"" +
         "    [ starter guide ]              ! get the starter guide link; thanks GnarlyGoat!\n" +
         "    [ rules | regulations ]        ! get the rules and regulations.\n" + 
-        "    [ pairing | pairing <player> ] ! get your (or given <player>) latest pairings with scheduled time\n" +
-        "    [ pairings ]                   ! get pairings link\n" +
-        "    [ standings ]                  ! get standings link\n" +
+	"" +
+	"-------------------" +
+	"-slack-information-" +
+	"-------------------" +
+	"" +
         "    [ channels | \n" +
         "        channel list |             ! list the important channels\n" +
         "        channel detail <channel> ] ! details regarding #<channel>\n" +
         "    [ commands | \n"  +
         "        command list ]             ! this list\n" +
-        "    [ rating <player> ]            ! get the player's classical rating.\n" +
-/*        "    [ challenge <opp1> <opp2> <w|b|r> <tc-min>+<tc-inc> <[un]rated> ]" +
-        "                                   ! this command will create a <rated|casual> challenge between\n" +
-        "                                   ! two opponents <opp1> <opp2> \n" +
-        "                                   ! opponent one being colored <w|b|r> and \n" +
-        "                                   ! time control <tc-min> with a <tc-inc> increment \n" +*/
-        "    [ teams | \n" +
-        "        team list |                ! list the teams in the current tournament\n" +
-        "        team stats <team-name> |   ! get statistics for a given <team-name>\n" +
-        "        team members <team-name> | ! list the members of a given <team-name>\n" +
-        "        team captain <team-name> ] ! name the captain of a given <team-name>\n" +
-        "    [ captains | \n" +
-        "        captain list |             ! list the team captains\n" +
-        "        captain guidelines ]       ! get the team captain guidelines\n" +
-        "    [ board <number> ]             ! get a sorted list of players by board\n" +
+	"" +
+	"--------------------" +
+	"-league information-" +
+	"--------------------" +
+	"" +
+        "    [ pairing | pairing <player> ] ! get the pairing and schedule for the <player> or the speaker if not supplied" + 
+        "    [ pairings ]                   ! get pairings link\n" +
+	"    [ standings ]                  ! get standings link\n" +
         "    [ mods (lonewolf)| \n"  +
         "        mod list (lonewolf)|       ! list the mods (without summoning)\n" +
         "        mods summon (lonewolf)]    ! summon the mods\n" +
         "    [ faq (lonewolf)]                        ! a document of frequently asked questions\n" + 
         "    [ registration | sign up ]     ! registration form to play in our league\n" +
-        "    [ source ]                     ! github repo for Chesster \n" +
-        "    [ subscription help ]          ! help for chesster's subscription system\n" +
+        "    [ rating <player> ]            ! get the player's classical rating.\n" +
+        "    [ teams | \n" +
+        "        team list |                ! list the teams in the current tournament\n" +
+        "        team stats <team-name> |   ! get statistics for a given <team-name>\n" +
+        "        team members <team-name> | ! list the members of a given <team-name>\n" +
+        "        team captain <team-name> ] ! name the captain of a given <team-name>\n" +
+        "    [ board <number> ]             ! get a sorted list of players by board\n" +
         "    [ nomination <league> ]        ! get a private nomination link for <league>, {45|lonewolf}, of your choosing\n" +
+	"\n" +
+	"----------\n" +
+	"-captains-\n" +
+	"----------\n" +
+        "\n" +
+        "    {captains|captain guidelines}  ! get the team captain guidelines\n" +
+        "    captain list                   ! list the team captains\n" +
+        "\n" +
+        "    assign {text:player} to board {int:board} during round {int:round} on {text:team}\n"
+        "    unassign alternate for board {int:board} during round {int:round} on {text:team}\n" +
+        "\n" +
+	"---------------------\n" +
+	"-player availability-\n" +
+	"---------------------\n" +
+	"You can set your availability for rounds in each league. \n" + 
+	"For Lonewolf, it will use this information to assign byes.\n" +
+        "" +
+        "    [player {text:player} is] {available|unavailable} for round {int:round} in {text:league}" +
+        "" +
+	"[optional expression]" +
+	"{choice1|choice2}" +
+	"{type:variable}" +
+	"" +
+	"---------------" +
+	"-subscriptions-" +
+	"---------------" +
+        "" +
+        "    [ subscription help ]          ! help for chesster's subscription system\n" +
+	"" +
+	"---------------" +
+	"-chesster-" +
+	"---------------" +
+        "" +
+        "    [ source ]                     ! github repo for Chesster \n" +
         "```\n";
 }
 
