@@ -4,10 +4,11 @@ const slack_token = require("./slack_token.js").token;
 const heltour_token = require("./heltour_token.js").token;
 
 
-const UNSTABLE_BOT_ID = "C0VCCPMJ8";
-const CRAZYHOUSE_CHANNEL_ID = "C0XQM31SL";
+const CRAZYHOUSE_CHANNEL_ID = "CBAA5T16V";
 const CRAZYHOUSE_GAMES_CHANNEL_ID = "CBAU4LBQA";
-const UNSTABLE_BOT_ZHTEAM_ID = "C0XQM31SL";
+const CRAZYHOUSE_SCHEDULING_CHANNEL_ID = "CBB2XLZM3";
+const CRAZYHOUSE_ALTERNATES_CHANNEL_ID = "CBAU4LBQA";
+const CRAZYHOUSE_LOGGING_CHANNEL_ID = 'GH3QS73J7';
 
 const INITIAL = 5;
 const INCREMENT = 5;
@@ -53,10 +54,11 @@ config["leagues"]["zhteam"] = {
                 "warningMessage": "Hi! Glad you got your game scheduled. Be warned though - it's cutting it pretty close to deadline! Please be on time and prompt with your game time, the league depends on it! Thanks, and if you have any questions, please contact the moderators.",
                 "lateMessage": "Hi! Sorry, that time you posted is not an acceptable time. We need all games to end by 12:00 GMT on Monday, and we believe if you start then, you won't be done then! Please try and find a better time, and if you cannot, please contact the moderators.",
                 "format": "MM/DD @ HH:mm",
-                "channel": "team-scheduling"
+                "channel": "crazyhouse-scheduling",
+                "channel_id": CRAZYHOUSE_SCHEDULING_CHANNEL_ID
             },
             "alternate": {
-                "channel_id": "G0DFRURGQ"
+                "channel_id": CRAZYHOUSE_ALTERNATES_CHANNEL_ID
             },
             "links": {
                 "faq": "http://zh.lakin.ca/zhteam/document/faq/",
@@ -78,10 +80,15 @@ config["database"] = "chesster";
 config["username"] = "chesster";
 config["password"] = "scrappy pulpit gourde hinders";
 
-config['watcherBaseURL'] = "https://en.stage.lichess.org/api/stream/games-by-users"
+config['watcherBaseURL'] = "https://lichess.org/api/stream/games-by-users"
 config['slack_tokens']['chesster'] = slack_token;
-config['winston']['channel'] = "#modster-logging";
-config['winston']['handleExceptions'] = false;
+config['winston'] = {
+        domain: "crazybot",
+        channel: "#crazyhouse-logging",
+        username: "crazybot",
+        level: "debug",
+        handleExceptions: false
+    };
 
 config["welcome"]["channel"] = "crazyhouse";
 
@@ -94,10 +101,10 @@ delete config["leagues"]["blitzbattle"];
 delete config["leagues"]["chess960"];
 
 config["channel_map"] = {
-        "G0DFRURGQ": "45+45",
         "crazyhouse": "zhteam",
         "crazyhouse-games": "zhteam",
         "crazyhouse-scheduling": "zhteam",
+        "crazyhouse-alternates": "zhteam",
         "crazyhouse-mods": "zhteam"
     };
 

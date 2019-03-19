@@ -7,6 +7,9 @@ const Q = require("q");
 const winston = require("winston");
 const moment = require("moment-timezone");
 const format = require('string-format');
+const jst = require('./debug.js').jst;
+const lichessApi = require('./lichess-api.js')();
+const lichess = require("./lichess");
 format.extend(String.prototype);
 
 // An emitter for league events
@@ -16,7 +19,6 @@ ChessLeagueEmitter.prototype  = new EventEmitter();
 
 const heltour = require('./heltour.js');
 
-const lichess = require("./lichess");
 var LEAGUE_DEFAULTS = {
     "name": "",
     "heltour": {
@@ -60,6 +62,7 @@ var league_attributes = {
     //   - scheduled_date (possibly undefined)
     //   - url (possibly undefined)
     //   - results (possibly undefined)
+    //   - clock
     //--------------------------------------------------------------------------
     _pairings: [],
 
@@ -93,7 +96,7 @@ var league_attributes = {
         username = username.split(" ")[0];
         return username.replace("*", "");
     },
-    
+
     //--------------------------------------------------------------------------
     // Lookup a player by playerName
     //--------------------------------------------------------------------------
@@ -177,7 +180,7 @@ var league_attributes = {
             self._teamLookup = newLookup;
         });
     },
-    
+
     //--------------------------------------------------------------------------
     // Calls into the website moderators endpoint to get the list of moderators
     // for the league.
@@ -195,19 +198,30 @@ var league_attributes = {
     refreshCurrentRoundSchedules: function() {
         var self = this;
         return heltour.getAllPairings(self.options.heltour, self.options.heltour.leagueTag).then(function(pairings) {
-            var newPairings = [];
-            _.each(pairings, function(pairing) {
+            self._pairings = pairings.map((pairing) => {
                 var date = moment.utc(pairing.datetime);
                 if (!date.isValid()) {
                     date = undefined;
                 }
                 // TODO: eventually we can deprecate these older attribute
                 //       names, but for now I'm ok with supporting both
+                let get_clock = (tc) => {
+                    split = tc.split('+');
+                    return {
+                        initial: parseInt(split[0]),
+                        increment: parseInt(split[1])
+                    }
+                }
+                if( pairing.game_link ) {
+                    pairing.game_id = lichessApi.gameLinkToId(pairing.game_link);
+                }
+                pairing.rated = self.options.gamelinks.rated;
                 pairing.datetime = pairing.date = date;
+                pairing.scheduled_time = pairing.datetime;
+                pairing.clock = get_clock(pairing.time_control);
                 pairing.url = pairing.game_link;
-                newPairings.push(pairing);
+                return pairing;
             });
-            self._pairings = newPairings;
             return self._pairings;
         });
     },
@@ -220,21 +234,15 @@ var league_attributes = {
         if (!white) {
             throw new Error("findPairing requires at least one username.");
         }
-        var possibilities = this._pairings;
-        function filter(playerName) {
-            if (playerName) {
-                possibilities = _.filter(possibilities, function(item) {
-                    return (
-                        item.white.toLowerCase().includes(playerName) ||
-                        item.black.toLowerCase().includes(playerName)
-                    );
-                });
-            }
-        }
-        filter(white);
-        filter(black);
-        return possibilities;
+        let names = [white, black].filter((name) => name);
+        return this._pairings.filter((pairing) => {
+            return names.some((name) => {
+               return pairing.white.toLowerCase().includes(name) ||
+                      pairing.black.toLowerCase().includes(name);
+            })
+        });
     },
+
     //--------------------------------------------------------------------------
     // Returns whether someone is a moderator or not.
     //--------------------------------------------------------------------------
@@ -269,7 +277,7 @@ var league_attributes = {
             // TODO: determine what to do if multiple pairings are returned. ?
             var pairing = pairings[0];
             var details = {
-                "player": targetPlayer.name, 
+                "player": targetPlayer.name,
                 "color": "white",
                 "opponent":  pairing.black,
                 "date": pairing.date
@@ -362,8 +370,8 @@ var league_attributes = {
         var self = this;
         return Q.fcall(function() {
             if (self.options.links && self.options.links.league) {
-                return "The pairings can be found on the website:\n" + 
-                        self.options.links.pairings + 
+                return "The pairings can be found on the website:\n" +
+                        self.options.links.pairings +
                         "\nAlternatively, try [ @chesster pairing [competitor] ]";
             } else {
                 return "The {name} league does not have a pairings link.".format({
@@ -379,7 +387,7 @@ var league_attributes = {
         var self = this;
         return Q.fcall(function() {
             if (self.options.links && self.options.links.league) {
-                return "The standings can be found on the website:\n" + 
+                return "The standings can be found on the website:\n" +
                         self.options.links.standings;
             } else {
                 return "The {name} league does not have a standings link.".format({
@@ -693,6 +701,7 @@ var getLeague = (function() {
         return _league_cache[league_name];
     };
 }());
+
 
 module.exports.League = League;
 module.exports.getLeague = getLeague;

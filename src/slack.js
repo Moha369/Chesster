@@ -51,7 +51,7 @@ function getSlackUser(message) {
     var player = self.getSlackUserFromNameOrID(nameOrId);
 
     if (!player) {
-        player = self.users.getByNameOrID(message.user); 
+        player = self.users.getByNameOrID(message.user);
     }
 
     return player;
@@ -85,7 +85,7 @@ function updatesUsers(bot, config){
         if (err) {
             throw new Error(err);
         }
-        
+
         heltour.getUserMap(
             config.heltour
         ).then(function(idByName) {
@@ -97,12 +97,10 @@ function updatesUsers(bot, config){
             if (response.hasOwnProperty('members') && response.ok) {
                 var byName = {};
                 var byId = {};
-                var total = response.members.length;
-                for (var i = 0; i < total; i++) {
-                    var member = response.members[i];
+                response.members.forEach((member) => {
                     member.name = nameById[member.id];
                     byId[member.id] = member;
-                }
+                });
                 _.forOwn(idByName, function(id, name) {
                     byName[name.toLowerCase()] = byId[id];
                 });
@@ -136,7 +134,7 @@ function updateChannels(bot){
             self.channels.byId = byId;
         }
     });
-    
+
     // @ https://api.slack.com/methods/mpim.list
     bot.api.mpim.list({}, function (err, response) {
         if (err) {
@@ -158,11 +156,11 @@ function updateChannels(bot){
 
 
 
-/* 
+/*
    updates the user list
    updates the channel lists
    then repeats in new thread
-   
+
    if it encounters an error it will exit the process with exit code 1
 */
 var count = 0;
@@ -171,14 +169,14 @@ function refresh(bot, delay, config) {
     return criticalPath(Q.fcall(function(){
         winston.info("doing refresh " + count++);
         bot.rtm.ping();
-        
+
         self.updatesUsers(bot, config);
         self.updateChannels(bot);
         if (self.options.refreshLeagues) {
             _.each(league.getAllLeagues(bot, config), function(l) {
                 l.refresh();
             });
-            setTimeout(function(){ 
+            setTimeout(function(){
                 self.refresh(bot, delay, config);
             }, delay);
         }
@@ -211,7 +209,7 @@ function botExceptionHandler(bot, message, promise){
     exceptionLogger(promise).catch(function(){
         winston.error("Message: " + JSON.stringify(message));
         bot.reply(message, "Something has gone terribly terribly wrong. Please forgive me.");
-        
+
     });
     return promise;
 }
@@ -432,7 +430,7 @@ function say(options) {
     self.bot.say(options);
 }
 //------------------------------------------------------------------------------
-// A helper method to workaround a bug in botkit. 
+// A helper method to workaround a bug in botkit.
 //
 // We store a reference to 'bot' in the startRTM method and then use it here
 // to start a new dm. This also turns it into a promised based API

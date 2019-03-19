@@ -1,2 +1,10 @@
 #!/bin/bash
+
+# For crazyhouse production
 forever start -c "node --max_old_space_size=768" -o output.log -e output.log ./src/chesster.js $1
+
+# Original used on main production
+# node --max_old_space_size=768 ./src/chesster.js $1 &>> output.log
+
+# convenient for development
+# npx nodemon --max_old_space_size=768 ./src/chesster.js $1 &>> output.log

@@ -8,6 +8,7 @@ const scheduling = require("./scheduling");
 const subscription = require("./subscription");
 const heltour = require('../heltour.js');
 const http = require("../http.js");
+const jst = require('../debug.js').jst;
 
 const TIMEOUT = 33;
 const CHEAT = 36;
@@ -31,10 +32,10 @@ var VALID_RESULTS = {
 
 // parse the input string for a results update
 function parseResult(inputString){
-    var tokens = getTokensResult(inputString);   
+    var tokens = getTokensResult(inputString);
     var result = findResult(tokens);
     var players = findPlayers(tokens);
-    
+
     return {
         "white": players.white,
         "black": players.black,
@@ -95,7 +96,7 @@ function ambientResults(bot, message) {
     if(!message.league){
         return;
     }
-    var resultsOptions = message.league.options.results; 
+    var resultsOptions = message.league.options.results;
     var channel = bot.channels.byId[message.channel];
     if (!channel) {
         return;
@@ -138,7 +139,7 @@ function ambientResults(bot, message) {
             replyPermissionFailure(bot, message);
             return;
         }
-        
+
         return heltour.findPairing(
             heltourOptions,
             result.white.name,
@@ -151,12 +152,12 @@ function ambientResults(bot, message) {
             }
 
             var pairing = _.head(findPairingResult["json"].pairings);
-            if( !_.isNil(pairing) 
-                && !_.isNil(pairing.game_link) 
+            if( !_.isNil(pairing)
+                && !_.isNil(pairing.game_link)
                 && !_.isEqual(pairing.game_link, "")){
                 //process game details
                 processGamelink(
-                    bot, 
+                    bot,
                     message,
                     pairing.game_link,
                     gamelinkOptions,
@@ -169,6 +170,7 @@ function ambientResults(bot, message) {
                     //update the pairing with the result bc there was no link found
                     heltour.updatePairing(
                         heltourOptions,
+                        [pairing],
                         result
                     ).then(function(updatePairingResult) {
                         if (updatePairingResult['error']) {
@@ -180,18 +182,20 @@ function ambientResults(bot, message) {
                         var leagueName = message.league.options.name;
                         var white = result.white;
                         var black = result.black;
-                        if(updatePairingResult['resultChanged'] && !_.isEmpty(updatePairingResult.result)){
-                            subscription.emitter.emit('a-game-is-over',
-                                message.league,
-                                [white.name, black.name],
-                                {
-                                    'result': updatePairingResult,
-                                    'white': white,
-                                    'black': black,
-                                    'leagueName': leagueName
-                                }
-                            );
-                        }
+                        updatePairingResult.pairings.forEach((pairing) => {
+                            if(pairing['resultChanged'] && !_.isEmpty(pairing.result)){
+                                subscription.emitter.emit('a-game-is-over',
+                                    message.league,
+                                    [white.name, black.name],
+                                    {
+                                        'result': pairing,
+                                        'white': white,
+                                        'black': black,
+                                        'leagueName': leagueName
+                                    }
+                                );
+                            }
+                        });
                     });
                 }else{
                     resultReplyMissingGamelink(bot, message);
@@ -292,7 +296,7 @@ function validateGameDetails(league, details) {
         details.clock && ( //clock
             !_.isEqual(details.clock.initial, options.clock.initial * 60) || // initial time
             !_.isEqual(details.clock.increment, options.clock.increment) ) // increment
-        ) 
+        )
     ){
         //the time control does not match options
         result.valid = false;
@@ -368,22 +372,22 @@ function validateUserResult(details, result){
     };
     if( details.winner && _.isEqual(result.result, "1/2-1/2")){
         //the details gave a winner but the user claimed draw
-        validity.reason = "the user claimed a draw " 
+        validity.reason = "the user claimed a draw "
                         + "but the gamelink specifies " + details.winner + " as the winner.";
         validity.valid = false;
    }else if(_.isEqual(details.winner, "black") && _.isEqual(result.result, "1-0")){
         //the details gave the winner as black but the user claimed white
-        validity.reason = "the user claimed a win for white " 
+        validity.reason = "the user claimed a win for white "
                         + "but the gamelink specifies black as the winner.";
         validity.valid = false;
     }else if(_.isEqual(details.winner, "white") && _.isEqual(result.result, "0-1")){
         //the details gave the winner as white but the user claimed black
-        validity.reason = "the user claimed a win for black " 
+        validity.reason = "the user claimed a win for black "
                         + "but the gamelink specifies white as the winner.";
         validity.valid = false;
     }else if(_.isEqual(details.status, "draw") && !_.isEqual(result.result, "1/2-1/2")){
         //the details gave a draw but the user did not claim a draw
-        validity.reason = "the user claimed a decisive result " 
+        validity.reason = "the user claimed a decisive result "
                         + "but the gamelink specifies a draw.";
         validity.valid = false;
     }
@@ -440,7 +444,7 @@ function processGameDetails(bot, message, details){
     });
 }
 
-function updateGamelink(league, details) {
+function updateGamelink(league, pairing, details) {
     var result = {};
     //our game is valid
     //get players to update the result in the sheet
@@ -450,7 +454,7 @@ function updateGamelink(league, details) {
     result.black = league.bot.users.getByNameOrID(black.userId);
     result.gamelinkID = details.id;
     result.gamelink =  "https://lichess.org/" + result.gamelinkID;
- 
+
     //get the result in the correct format
     if(_.isEqual(details.status, "draw") || _.isEqual(details.status, "stalemate") || details.winner){
         if(_.isEqual(details.winner, "black")){
@@ -467,41 +471,45 @@ function updateGamelink(league, details) {
     //update the website with results from gamelink
     return heltour.updatePairing(
         league.options.heltour,
+        [pairing],
         result
     ).then(function(updatePairingResult) {
         if (updatePairingResult['error']) {
             //if there was a problem with heltour, we should not take further steps
-            throw new heltour.HeltourError(updatePairingResult['error']); 
+            throw new heltour.HeltourError(updatePairingResult['error']);
         }
 
         var leagueName = league.options.name;
         var white = result.white;
         var black = result.black;
-        if(updatePairingResult['resultChanged'] && !_.isEmpty(updatePairingResult.result)){
-            // TODO: Test this.
-            subscription.emitter.emit('a-game-is-over',
-                league,
-                [white.name, black.name],
-                {
-                    'result': updatePairingResult,
-                    'white': white,
-                    'black': black,
-                    'leagueName': leagueName
-                }
-            );
-        }else if(updatePairingResult['gamelinkChanged']){
-            // TODO: Test this.
-            subscription.emitter.emit('a-game-starts',
-                league,
-                [white.name, black.name],
-                {
-                    'result': result,
-                    'white': white,
-                    'black': black,
-                    'leagueName': leagueName
-                }
-            );
-        }
+        updatePairingResult.pairings.forEach((pairing) => {
+
+            if(pairing['result_changed'] && !_.isEmpty(pairing.result)){
+                // TODO: Test this.
+                subscription.emitter.emit('a-game-is-over',
+                    league,
+                    [white.name, black.name],
+                    {
+                        'result': pairing,
+                        'white': white,
+                        'black': black,
+                        'leagueName': leagueName
+                    }
+                );
+            }else if(pairing['game_link_changed']){
+                // TODO: Test this.
+                subscription.emitter.emit('a-game-starts',
+                    league,
+                    [white.name, black.name],
+                    {
+                        'result': result,
+                        'white': white,
+                        'black': black,
+                        'leagueName': leagueName
+                    }
+                );
+            }
+        });
         return updatePairingResult;
     });
 }
@@ -522,7 +530,7 @@ function ambientGamelinks(bot, message) {
     if (!heltourOptions) {
         winston.error("[GAMELINK] {} league doesn't have heltour options!?".format(message.league.options.name));
         return;
-    } 
+    }
 
     try{
         return processGamelink(bot, message, message.text, gamelinkOptions, heltourOptions);

@@ -2,11 +2,14 @@
 // Heltour related facilities
 //------------------------------------------------------------------------------
 const _ = require('lodash');
+const rp = require('request-promise');
 const url = require('url');
 const http = require("./http.js");
 const Q = require("q");
 const format = require('string-format');
 const winston = require("winston");
+const jst = require('./debug.js').jst;
+const lichess = require('./lichess-api.js');
 format.extend(String.prototype);
 
 //------------------------------------------------------------------------------
@@ -18,9 +21,9 @@ function heltourRequest(heltourConfig, endpoint) {
     return request;
 }
 
-/* 
- * takes an optional leagueTag, rather than using the league 
- * specified in heltour config so you can choose all leagues 
+/*
+ * takes an optional leagueTag, rather than using the league
+ * specified in heltour config so you can choose all leagues
  * or one in particular.
  */
 function findPairing(heltourConfig, white, black, leagueTag) {
@@ -45,92 +48,62 @@ function findPairing(heltourConfig, white, black, leagueTag) {
  */
 function getAllPairings(heltourConfig, leagueTag) {
     var request = heltourRequest(heltourConfig, "find_pairing");
-    request.parameters = {};
-    var deferred = Q.defer();
-    if (!_.isNil(leagueTag)) {
-        request.parameters.league = leagueTag;
-    } else {
-        deferred.reject("leagueTag is a required parameter for heltour.getAllPairings");
-        return deferred.promise;
+    if (_.isNil(leagueTag)) {
+        return Promise.reject(
+            "leagueTag is a required parameter for heltour.getAllPairings");
     }
 
-    http.fetchURLIntoJSON(request).then(function(response) {
+    request.parameters = {};
+    request.parameters.league = leagueTag;
+    return http.fetchURLIntoJSON(request).then(function(response) {
         var pairings = response['json'];
         if (!_.isNil(pairings.error)) {
-            deferred.reject(pairings.error);
+            throw pairings.error;
         } else {
             if (!_.isNil(pairings.pairings)) {
-                deferred.resolve(pairings.pairings);
+                return pairings.pairings;
             } else {
                 winston.error("Error getting pairings for {}".format(leagueTag));
-                deferred.reject("No Pairings");
+                throw "No Pairings";
             }
         }
-    }).catch(function(error) {
-        deferred.reject(error);
     });
-    return deferred.promise;
 }
 
 // Update the schedule
-function updateSchedule(heltourConfig, schedule) {
-    var request = heltourRequest(heltourConfig, "update_pairing");
-    request.method = "POST";
-    request.bodyParameters = {
-        'league': heltourConfig.leagueTag,
-        'white': schedule.white,
-        'black': schedule.black,
-        'datetime': schedule.date.format()
-    };
-
-    return http.fetchURLIntoJSON(request);
+function updateSchedule(heltourConfig, pairings, schedule) {
+    return updatePairing(heltourConfig, pairings, schedule);
 }
 
-// Update the pairing with a result or link
-function updatePairing(heltourConfig, result) {
-    return findPairing(heltourConfig, result.white.name, result.black.name).then(function(response) {
-        var pairingResult = response['json'];
-        var pairings = pairingResult['pairings'];
-        if (pairings.length < 1) {
-            return {
-                "error": "no_pairing"
-            };
-        } else if (pairings.length > 1) {
-            return {
-                "error": "ambiguous"
-            };
-        }
-        var request = heltourRequest(heltourConfig, "update_pairing");
-        request.method = "POST";
-        request.bodyParameters = {
-            'league': heltourConfig.leagueTag,
-            'white': result.white.name,
-            'black': result.black.name
-        };
-        if (result.result) {
-            request.bodyParameters['result'] = result.result;
-        }
-        if (result.gamelink) {
-            request.bodyParameters['game_link'] = result.gamelink;
-        }
+// Update the pairing or pairings with a result, link, or scheduled_time
+function updatePairing(heltourConfig, pairings, body) {
+    if( body.game ) {
+        body.game_link = lichess.gameIdToLink(body.game.id);
+    }
 
-        return http.fetchURLIntoJSON(request).then(function(response) {
-            var newResult = response['json'];
-            newResult['gamelink'] = result['gamelink'];
-            newResult['gamelinkChanged'] = newResult['game_link_changed'];
-            newResult['resultChanged'] = newResult['result_changed'];
-            newResult['result'] = result['result'];
-            if (newResult['reversed']) {
-                newResult['white'] = result['black'];
-                newResult['black'] = result['white'];
-            } else {
-                newResult['white'] = result['white'];
-                newResult['black'] = result['black'];
-            }
-            return newResult;
-        
-        });
-    });
+    var request = heltourRequest(heltourConfig, "update_pairing");
+    const options = {
+        method: 'POST',
+        uri: request.href,
+        headers: {
+            'Authorization': 'Token ' + heltourConfig.token
+        },
+        body: Object.assign({}, body, {
+            'league': heltourConfig.leagueTag,
+            'pairings': pairings.map((pairing) => pairing.id),
+        }),
+        json:true
+    }
+    return rp(options);
+
+    // return http.fetchURLIntoJSON(request).then(function(response) {
+        // var newResult = response['json'];
+        // newResult['gamelink'] = body['gamelink'];
+        // newResult['result'] = body['result'];
+        // newResult['gamelinkChanged'] = newResult['game_link_changed'];
+        // newResult['resultChanged'] = newResult['result_changed'];
+        // return newResult;
+    // });
 }
 
 function getRoster(heltourConfig, leagueTag) {

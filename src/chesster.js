@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // Entry point for Chesster
-// Bot commands are defined here with implementations in various modules. 
+// Bot commands are defined here with implementations in various modules.
 //------------------------------------------------------------------------------
 const slack = require('./slack.js');
 const errors = require('./errors.js');
@@ -21,7 +21,7 @@ const presence = require('./commands/presence.js');
 
 /* static entry point */
 
-var configFile = process.argv[2] || "../config/config.js"; 
+var configFile = process.argv[2] || "../config/config.js";
 var chesster = new slack.Bot({
     slackName: "lichess4545",
     configFile: configFile
@@ -113,7 +113,7 @@ chesster.hears(
         middleware: [slack.withLeagueByChannelName],
         patterns: ['^unassign'],
         messageTypes: ['ambient', 'direct_mention']
-    }, 
+    },
     availability.unassignAlternate
 );
 
@@ -190,10 +190,10 @@ chesster.hears(
 // commands
 
 function prepareCommandsMessage(){
-    return "I will respond to the following commands when they are spoken to " + 
+    return "I will respond to the following commands when they are spoken to " +
         users.getIdString("chesster") + ": \n```" +
         "    [ starter guide ]              ! get the starter guide link; thanks GnarlyGoat!\n" +
-        "    [ rules | regulations ]        ! get the rules and regulations.\n" + 
+        "    [ rules | regulations ]        ! get the rules and regulations.\n" +
         "    [ pairing | pairing <player> ] ! get your (or given <player>) latest pairings with scheduled time\n" +
         "    [ pairings ]                   ! get pairings link\n" +
         "    [ standings ]                  ! get standings link\n" +
@@ -204,7 +204,7 @@ function prepareCommandsMessage(){
         "    [ mods (lonewolf)| \n"  +
         "        mod list (lonewolf)|       ! list the mods (without summoning)\n" +
         "        mods summon (lonewolf)]    ! summon the mods\n" +
-        "    [ faq (lonewolf)]                        ! a document of frequently asked questions\n" + 
+        "    [ faq (lonewolf)]                        ! a document of frequently asked questions\n" +
         "    [ registration | sign up ]     ! registration form to play in our league\n" +
         "    [ nomination (4545) ]          ! get a nomination link for up to 3 games.\n" +
         "    [ source ]                     ! github repo for Chesster \n" +
