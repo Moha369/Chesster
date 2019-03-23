@@ -394,7 +394,7 @@ function Watcher(bot, league) {
                 }
                 self.log.info(`Received game details: ${jst(details)}`);
                 self.league.refreshCurrentRoundSchedules()
-                    .then((details) => {
+                    .then((response) => {
                         return self.processGameDetails(details);
                     })
                     .catch((e) => {
