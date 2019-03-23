@@ -22,7 +22,7 @@ const api = (config) => {
         },
 
         gameIdToLink: (gameId) => {
-            return base + '/' + gameId;
+            return base + gameId;
         }
     };
 };
