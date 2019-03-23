@@ -100,7 +100,7 @@ function Watcher(bot, league) {
 
             })
             .catch((e) => {
-                self.log.error("Error assigning game_link to pairing: " + e);
+                self.log.error("Error assigning game_link to pairing: " + e.stack);
             });
     };
 
@@ -122,7 +122,7 @@ function Watcher(bot, league) {
             );
         })
         .catch((e) => {
-            self.log.error("Error trying to save result: " + e);
+            self.log.error("Error trying to save result: " + e.stack);
             throw e;
         });
     };
@@ -303,7 +303,7 @@ function Watcher(bot, league) {
             return self.updatePairing(pairing, {game_link: ""}).then((response) => {
                 self.log.info(`Game aborted ${jst(game)}`)
             }).catch((err) => {
-                self.log.error(err);
+                self.log.error(err.stack);
             });
         }
 
@@ -387,8 +387,7 @@ function Watcher(bot, league) {
                 try {
                     details = JSON.parse(chunk.toString());
                 } catch (e) {
-                    self.log.error(`Ending request due to error in content`);
-                    self.log.error(e);
+                    self.log.error(`Ending request due to error in content ${e.stack}`);
                     self.req.abort();
                     self.req = null;
                 }
@@ -398,7 +397,7 @@ function Watcher(bot, league) {
                         return self.processGameDetails(details);
                     })
                     .catch((e) => {
-                        self.log.error(`Error refreshing pairings: ${error}`);
+                        self.log.error(`Error refreshing pairings: ${error.stack}`);
                     });
             });
             res.on('end', () => {
@@ -408,7 +407,7 @@ function Watcher(bot, league) {
             });
             hasResponse = true;
         }).on('error', (e) => {
-            self.log.error(e);
+            self.log.error(e.stack);
             // If we have a response, the above res.on('end') gets called even in this case.
             // So let the above restart the watcher
             if (!hasResponse) {
