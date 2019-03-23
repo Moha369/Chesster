@@ -287,7 +287,7 @@ function Watcher(bot, league) {
                 [marks => !marks.correctVariantType, "The variant should be " + pairing.variant],
                 [marks => marks.hasResult, "There is already a result set for this pairing. If you want " +
                     "the new game to count for the league, please contact a mod."],
-                [marks => marks.hasIncorrectGameLink, "Find message for this in git somewhere"]]
+                [marks => marks.hasIncorrectGameLink, "This pairing already as a game link assigned to it"]]
                 .filter(warning => warning[0](closest.marks))
                 .map(warning => warning[1]);
             warnings = warnings.concat(gameLinkValidationErrors.map(err => err.value ));
