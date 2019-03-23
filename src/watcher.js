@@ -101,7 +101,6 @@ function Watcher(bot, league) {
             })
             .catch((e) => {
                 self.log.error("Error assigning game_link to pairing: " + e);
-                throw e;
             });
     };
 
@@ -394,11 +393,13 @@ function Watcher(bot, league) {
                     self.req = null;
                 }
                 self.log.info(`Received game details: ${jst(details)}`);
-                self.league.refreshCurrentRoundSchedules().then(function() {
-                    self.processGameDetails(details);
-                }).catch(function(error) {
-                    self.log.error(`Error refreshing pairings: ${error}`);
-                });
+                self.league.refreshCurrentRoundSchedules()
+                    .then((details) => {
+                        return self.processGameDetails(details);
+                    })
+                    .catch((e) => {
+                        self.log.error(`Error refreshing pairings: ${error}`);
+                    });
             });
             res.on('end', () => {
                 self.log.info("Watcher response ended");

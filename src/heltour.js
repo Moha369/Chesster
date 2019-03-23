@@ -9,7 +9,7 @@ const Q = require("q");
 const format = require('string-format');
 const winston = require("winston");
 const jst = require('./debug.js').jst;
-const lichess = require('./lichess-api.js');
+const lichess = require('./lichess-api.js')();
 format.extend(String.prototype);
 
 //------------------------------------------------------------------------------
