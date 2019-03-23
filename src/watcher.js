@@ -87,16 +87,16 @@ function Watcher(bot, league) {
                     channel: self.league.options.gamelinks.channel_id,
                     attachments: [] // Needed to activate link parsing in the message
                 });
-                subscription.emitter.emit('a-game-starts',
-                    self.league,
-                    [game.white.name, game.black.name],
-                    {
-                        'result': result,
-                        'white': game.white,
-                        'black': game.black,
-                        'leagueName': self.league.options.name
-                    }
-                );
+                // subscription.emitter.emit('a-game-starts',
+                    // self.league,
+                    // [game.white.name, game.black.name],
+                    // {
+                        // 'result': result,
+                        // 'white': game.white,
+                        // 'black': game.black,
+                        // 'leagueName': self.league.options.name
+                    // }
+                // );
 
             })
             .catch((e) => {
@@ -110,16 +110,16 @@ function Watcher(bot, league) {
                 text: `<@${pairing.white}> ${result} <@${pairing.black}>`,
                 channel: self.league.options.results.channel_id
             });
-            subscription.emitter.emit('a-game-is-over',
-                self.league,
-                [pairing.white, pairing.black],
-                {
-                    'result': result,
-                    'white': game.white,
-                    'black': game.black,
-                    'leagueName': self.league.options.name
-                }
-            );
+            // subscription.emitter.emit('a-game-is-over',
+                // self.league,
+                // [pairing.white, pairing.black],
+                // {
+                    // 'result': result,
+                    // 'white': game.white,
+                    // 'black': game.black,
+                    // 'leagueName': self.league.options.name
+                // }
+            // );
         })
         .catch((e) => {
             self.log.error("Error trying to save result: " + e.stack);
