@@ -215,6 +215,8 @@ var league_attributes = {
                 if( pairing.game_link ) {
                     pairing.game_id = lichessApi.gameLinkToId(pairing.game_link);
                 }
+                pairing.white = pairing.white.toLowerCase();
+                pairing.black = pairing.black.toLowerCase();
                 pairing.rated = self.options.gamelinks.rated;
                 pairing.datetime = pairing.date = date;
                 pairing.scheduled_time = pairing.datetime;
