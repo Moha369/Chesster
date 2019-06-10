@@ -143,7 +143,7 @@ var ratingFunctions = (function() {
         //store the promise for reuse
         _playerPromises[name] = getPlayerByName(name, isBackground).then(function(result) {
             _playerPromises[name] = undefined;
-            var rating = result.json.perfs.classical.rating;
+            var rating = result.json.perfs.crazyhouse.rating;
             // Get the writable lock for the database.
             return db.LichessRating.findOrCreate({
                 where: { lichessUserName: name }
